@@ -249,7 +249,6 @@ pub struct QQChannel {
     dedup: Arc<RwLock<HashSet<String>>>,
     next_msg_seq: Arc<AtomicU16>, // 用于生成 msg_seq (1..=65535)
 }
-}
 
 impl QQChannel {
     pub fn new(app_id: String, app_secret: String, allowed_users: Vec<String>) -> Self {
@@ -269,6 +268,8 @@ impl QQChannel {
             allowed_users,
             token_cache: Arc::new(RwLock::new(None)),
             dedup: Arc::new(RwLock::new(HashSet::new())),
+            //用于生成 msg_seq (1..=65535)
+            next_msg_seq: Arc::new(RwLock::new(AtomicU16::new(1))),
         }
     }
 
