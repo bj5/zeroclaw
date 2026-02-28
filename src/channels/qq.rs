@@ -269,7 +269,7 @@ impl QQChannel {
             token_cache: Arc::new(RwLock::new(None)),
             dedup: Arc::new(RwLock::new(HashSet::new())),
             //用于生成 msg_seq (1..=65535)
-            next_msg_seq: Arc::new(RwLock::new(AtomicU16::new(1))),
+            next_msg_seq: Arc::new(AtomicU16::new(1)),
         }
     }
 
