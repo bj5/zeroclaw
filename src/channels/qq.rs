@@ -5,6 +5,7 @@ use futures_util::{SinkExt, StreamExt};
 use ring::signature::Ed25519KeyPair;
 use serde_json::{json, Map, Value};
 use std::collections::HashSet;
+use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::RwLock;
@@ -246,6 +247,8 @@ pub struct QQChannel {
     token_cache: Arc<RwLock<Option<(String, u64)>>>,
     /// Message deduplication set.
     dedup: Arc<RwLock<HashSet<String>>>,
+    next_msg_seq: Arc<AtomicU16>, // 用于生成 msg_seq (1..=65535)
+}
 }
 
 impl QQChannel {
@@ -615,8 +618,13 @@ impl Channel for QQChannel {
             .as_deref()
             .map(str::trim)
             .filter(|value| !value.is_empty());
-        let mut msg_seq: u64 = 1;
+        
+        // ✅ 关键修复：使用 AtomicU16 生成合规 msg_seq
+        //let mut msg_seq: u64 = 1;
 
+        let seq_u16 = self.next_msg_seq.fetch_add(1, Ordering::Relaxed);
+        let mut msg_seq = if seq_u16 == 0 { 1 } else { seq_u16 as u64 };
+        
         let (text_content, image_urls) = parse_outgoing_content(&message.content);
 
         if let Some(body) = build_text_message_body(&text_content, passive_msg_id, msg_seq) {
